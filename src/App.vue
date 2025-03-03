@@ -10,6 +10,7 @@
         :styles="styles"
         :language="currentLanguage"
         :languages="languages"
+        :selectedStyle="selectedStyle"
         :presets="presets"
         @update-pen="updatePen"
         @clear-canvas="clearCanvas"
@@ -18,13 +19,14 @@
         @update-style="updateStyle"
         @preset-change="applyPreset"
         @update:language="updateLanguage"
+        @toggle-styles-panel="toggleStylesPanel"
     />
 
-    <!-- Основное содержимое, центрированное по вертикали и горизонтали -->
+    <!-- Основное содержимое, центрированное с учетом Toolbar -->
     <div class="main-container">
-      <!-- Контейнер для окон, расположенных в одну строку -->
+      <!-- Контейнер для областей (рисования и генерации) -->
       <div class="windows-container">
-        <!-- Область рисования (Canvas) -->
+        <!-- Область рисования -->
         <div class="drawing-window">
           <CanvasComponent
               ref="canvasComponent"
@@ -32,15 +34,13 @@
               :height="drawingDimensions.height"
           />
         </div>
-        <!-- Область генерации с рамкой -->
+        <!-- Область генерации -->
         <div class="generation-window">
           <div
               class="generation-container"
-              :style="{
-              width: generationDimensions.width + 'px',
-              height: generationDimensions.height + 'px'
-            }"
+              :style="{ width: generationDimensions.width + 'px', height: generationDimensions.height + 'px' }"
           >
+            <!-- Если resultImage пустой, можно показывать пустой фон. Если генерируется, показываем loading.gif -->
             <img
                 :src="resultImage"
                 alt="Сгенерированное изображение"
@@ -50,13 +50,32 @@
         </div>
       </div>
 
-      <!-- Контейнер для кнопки генерации, размещённой по центру под окнами -->
+      <!-- Контейнер для кнопки генерации, расположенной под окнами по центру -->
       <div class="generate-button-container">
-        <button class="generate-btn" @click="generateImage">
-          Сгенерировать изображение
+        <button
+            class="generate-btn"
+            @click="generateImage"
+            :disabled="isGenerating"
+        >
+          {{ generateButtonLabel }}
         </button>
       </div>
     </div>
+
+    <!-- Выдвигающаяся панель со стилями -->
+    <transition name="slide">
+      <div v-if="showStylesPanel" class="styles-panel">
+        <h3>Стили</h3>
+        <ul>
+          <li v-for="style in styles" :key="style.name" @click="selectStyle(style)">
+            {{ style.name }}
+          </li>
+        </ul>
+        <button class="close-btn" @click="toggleStylesPanel">
+          Закрыть
+        </button>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -71,27 +90,26 @@ export default {
     return {
       currentLanguage: "en",
       languages: ["en", "ru"],
-      // Стили загружаются с бэкенда через endpoint /styles
+      // Стили загружаются с backend через endpoint /styles
       styles: [],
       selectedStyle: "(No style)",
       drawingDimensions: { width: 400, height: 400 },
       generationDimensions: { width: 400, height: 400 },
       presets: [
-        {
-          drawing: { width: 400, height: 400 },
-          generation: { width: 800, height: 800 }
-        },
-        {
-          drawing: { width: 600, height: 600 },
-          generation: { width: 600, height: 600 }
-        },
-        {
-          drawing: { width: 800, height: 800 },
-          generation: { width: 400, height: 400 }
-        }
+        { drawing: { width: 400, height: 400 }, generation: { width: 800, height: 800 } },
+        { drawing: { width: 600, height: 600 }, generation: { width: 600, height: 600 } },
+        { drawing: { width: 800, height: 800 }, generation: { width: 400, height: 400 } }
       ],
-      resultImage: ""
+      resultImage: "",
+      showStylesPanel: false, // Флаг отображения панели со стилями
+      isGenerating: false // Флаг, указывающий, идет ли генерация изображения
     };
+  },
+  computed: {
+    generateButtonLabel() {
+      // Возвращает надпись для кнопки генерации в зависимости от языка
+      return this.currentLanguage === "ru" ? "Сгенерировать изображение" : "Generate Image";
+    }
   },
   mounted() {
     this.fetchStyles();
@@ -110,7 +128,21 @@ export default {
         console.error("Ошибка запроса стилей:", error);
       }
     },
-    // Обработка выбора предустановленного варианта
+    // Переключение видимости панели со стилями
+    toggleStylesPanel() {
+      this.showStylesPanel = !this.showStylesPanel;
+    },
+    // Выбор стиля из панели – устанавливаем выбранный стиль и закрываем панель
+    selectStyle(style) {
+      this.selectedStyle = style.name;
+      this.toggleStylesPanel();
+      // Эмиттируем событие, если нужно уведомить родителя
+      this.updateStyle(this.selectedStyle);
+    },
+    updateStyle(newStyle) {
+      this.selectedStyle = newStyle;
+    },
+    // Выбор предустановленного варианта
     applyPreset(index) {
       const preset = this.presets[index];
       this.drawingDimensions = { ...preset.drawing };
@@ -121,6 +153,11 @@ export default {
       );
     },
     async generateImage() {
+      // Блокируем кнопку генерации, показываем GIF:
+      this.isGenerating = true;
+      // Устанавливаем локальный gif (например, в каталоге public)
+      this.resultImage = "/loading.gif";
+
       const canvas = this.$refs.canvasComponent.getCanvas();
       let dataUrl = canvas.toDataURL("image/png");
       const base64Image = dataUrl.split(",")[1];
@@ -140,9 +177,13 @@ export default {
           this.resultImage = URL.createObjectURL(blob);
         } else {
           console.error("Ошибка генерации:", await response.text());
+          this.resultImage = ""; // Очищаем в случае ошибки
         }
       } catch (error) {
         console.error("Ошибка при запросе:", error);
+        this.resultImage = "";
+      } finally {
+        this.isGenerating = false; // Разблокируем кнопку в любом случае
       }
     },
     updatePen(updated) {
@@ -156,9 +197,6 @@ export default {
     },
     redo() {
       this.$refs.canvasComponent.redo();
-    },
-    updateStyle(newStyle) {
-      this.selectedStyle = newStyle;
     },
     updateLanguage(newLanguage) {
       this.currentLanguage = newLanguage;
@@ -180,7 +218,8 @@ export default {
   position: fixed;
   top: 10px;
   right: 10px;
-  width: 500px;
+  width: 40px;
+  height: 40px;
   z-index: 1100;
 }
 .top-right-icon img {
@@ -189,19 +228,19 @@ export default {
   object-fit: contain;
 }
 
-/* Основное содержимое, центрированное по вертикали и горизонтали */
+/* Основное содержимое, центрированное с учетом фиксированного Toolbar */
 .main-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  margin-left: 60px; /* Отступ, чтобы не перекрывать фиксированный Toolbar */
+  margin-left: 60px; /* Отступ для Toolbar */
   box-sizing: border-box;
   padding: 20px;
 }
 
-/* Контейнер для окон — расположение в одну строку */
+/* Контейнер для областей (рисования и генерации) — располагаем их в одну строку */
 .windows-container {
   display: flex;
   flex-direction: row;
@@ -210,15 +249,11 @@ export default {
   align-items: center;
 }
 
-/* Окна рисования и генерации: задаём рамки */
+/* Окна рисования и генерации: задаем рамки */
 .drawing-window,
 .generation-window {
   border: 2px solid #000;
-  /* Если есть padding, он может уменьшать размеры содержимого */
-  padding: 0; /* или задайте его одинаково, как и для drawing-window */
-  box-sizing: border-box;
 }
-
 
 /* Контейнер области генерации */
 .generation-container {
@@ -228,7 +263,6 @@ export default {
   background-color: #fff;
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
 .generation-container img {
   width: 100%;
@@ -236,7 +270,7 @@ export default {
   object-fit: contain;
 }
 
-/* Контейнер для кнопки генерации, размещённой под окнами по центру */
+/* Контейнер для кнопки генерации, размещенной под окнами */
 .generate-button-container {
   margin-top: 20px;
   width: 100%;
@@ -247,5 +281,49 @@ export default {
   padding: 8px 12px;
   font-size: 16px;
   cursor: pointer;
+}
+
+/* Стили для выдвигаемой панели со стилями */
+.styles-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100vh;
+  background-color: #fff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
+  z-index: 1200;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.styles-panel h3 {
+  margin-top: 0;
+}
+.styles-panel ul {
+  list-style: none;
+  padding: 0;
+}
+.styles-panel li {
+  padding: 8px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+}
+.styles-panel li:hover {
+  background-color: #f0f0f0;
+}
+.styles-panel .close-btn {
+  margin-top: 20px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* Переход для панели (выдвижение) */
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease;
+}
+.slide-enter,
+.slide-leave-to {
+  transform: translateX(-100%);
 }
 </style>
