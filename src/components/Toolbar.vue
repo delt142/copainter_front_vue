@@ -1,56 +1,89 @@
 <template>
-  <div class="toolbar">
-    <!-- Логотип в верхней части панели -->
-    <div class="logo-container">
-      <img src="/logo.png" alt="Logo" class="logo" />
+  <div class="toolbar-wrapper">
+    <!-- Базовая панель (toolbar-base) – всегда видна -->
+    <div class="toolbar-base">
+      <div class="logo-container">
+        <img src="/logo.png" alt="Logo" class="logo" />
+      </div>
+
+      <!-- Основные инструменты (иконки выровнены по центру) -->
+      <div class="tools">
+        <button :class="{ selected: selectedTool === 'pencil' }" @click="setTool('pencil')">
+          <span class="icon">✏️</span>
+          <span class="btn-label">{{ labels.pencil }}</span>
+        </button>
+        <button :class="{ selected: selectedTool === 'eraser' }" @click="setTool('eraser')">
+          <span class="icon">🧽</span>
+          <span class="btn-label">{{ labels.eraser }}</span>
+        </button>
+        <button :class="{ selected: selectedTool === 'line' }" @click="setTool('line')">
+          <span class="icon">📏</span>
+          <span class="btn-label">{{ labels.line }}</span>
+        </button>
+        <button @click="undoAction">
+          <span class="icon">↶</span>
+          <span class="btn-label">{{ labels.undo }}</span>
+        </button>
+        <button @click="redoAction">
+          <span class="icon">↷</span>
+          <span class="btn-label">{{ labels.redo }}</span>
+        </button>
+      </div>
+
+      <!-- Контроль размера кисти -->
+      <div class="pen-size-control">
+        <input type="range" min="1" max="24" v-model.number="localPenSize" @input="updateBrushSize" />
+        <span class="pen-size-label">{{ localPenSize }} px</span>
+      </div>
+
+      <!-- Нижняя часть панели с дополнительными кнопками -->
+      <div class="bottom-controls">
+        <!-- Кнопка для показа/скрытия панели со стилями.
+             Под кнопкой выводится выбранный стиль. -->
+        <button @click.stop="toggleStylesPanel">
+          <span class="icon">🎨</span>
+          <span class="btn-label">{{ labels.styles }}</span>
+          <span class="selected-style">{{ selectedStyle }}</span>
+        </button>
+        <!-- Кнопка переключения темы -->
+        <button @click="toggleTheme">
+          <span class="icon">{{ isDarkTheme ? '🌞' : '🌜' }}</span>
+          <span class="btn-label">{{ labels.theme }}</span>
+        </button>
+        <!-- Кнопка смены языка -->
+        <button @click="changeLanguage">
+          <span class="icon">{{ selectedLanguage === 'en' ? 'RU' : 'EN' }}</span>
+          <span class="btn-label">{{ labels.language }}</span>
+        </button>
+        <!-- Новая кнопка для циклического изменения размеров окон -->
+        <button @click="cycleWindowSize">
+          <span class="icon">📐</span>
+          <span class="btn-label">{{ labels.size }}</span>
+        </button>
+        <!-- Кнопка очистки Canvas -->
+        <button @click="clearCanvas">
+          <span class="icon">🧹</span>
+          <span class="btn-label">{{ labels.clear }}</span>
+        </button>
+        <!-- Кнопка информации -->
+        <button @click="showInfo">
+          <span class="icon">ℹ️</span>
+          <span class="btn-label">{{ labels.info }}</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Блок с основными инструментами – кнопки выровнены по центру -->
-    <div class="tools">
-      <button :class="{ selected: selectedTool === 'pencil' }" @click="setTool('pencil')">
-        <span class="icon">✏️</span>
-        <span class="btn-label">{{ labels.pencil }}</span>
-      </button>
-      <button :class="{ selected: selectedTool === 'eraser' }" @click="setTool('eraser')">
-        <span class="icon">🧽</span>
-        <span class="btn-label">{{ labels.eraser }}</span>
-      </button>
-      <button :class="{ selected: selectedTool === 'line' }" @click="setTool('line')">
-        <span class="icon">📏</span>
-        <span class="btn-label">{{ labels.line }}</span>
-      </button>
-    </div>
-
-    <!-- Нижняя часть панели с дополнительными кнопками -->
-    <div class="bottom-controls">
-      <!-- Кнопка для вызова панели со стилями -->
-      <button @click="toggleStylesPanel">
-        <span class="icon">🎨</span>
-        <span class="btn-label">{{ labels.styles }}</span>
-        <!-- Под кнопкой со стилями выводим выбранный стиль -->
-        <span class="selected-style">{{ selectedStyle }}</span>
-      </button>
-      <!-- Кнопка переключения темы (светлая/тёмная) -->
-      <button @click="toggleTheme">
-        <span class="icon">{{ isDarkTheme ? '🌞' : '🌜' }}</span>
-        <span class="btn-label">{{ labels.theme }}</span>
-      </button>
-      <!-- Кнопка смены языка -->
-      <button @click="changeLanguage">
-        <span class="icon">{{ selectedLanguage === 'en' ? 'RU' : 'EN' }}</span>
-        <span class="btn-label">{{ labels.language }}</span>
-      </button>
-      <!-- Кнопка очистки Canvas -->
-      <button @click="clearCanvas">
-        <span class="icon">🧹</span>
-        <span class="btn-label">{{ labels.clear }}</span>
-      </button>
-      <!-- Кнопка информации -->
-      <button @click="showInfo">
-        <span class="icon">ℹ️</span>
-        <span class="btn-label">{{ labels.info }}</span>
-      </button>
-    </div>
+    <!-- Выдвигаемая панель со стилями (styles-panel) – отдельный фиксированный элемент -->
+    <transition name="slide">
+      <div v-if="showStylesPanel" ref="stylesPanel" class="styles-panel" @click.stop>
+        <h3>{{ labels.styles }}</h3>
+        <ul>
+          <li v-for="style in styles" :key="style.name" @click="selectStyle(style)">
+            {{ style.name }}
+          </li>
+        </ul>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -66,44 +99,56 @@ export default {
       type: Array,
       default: () => ["en", "ru"]
     },
-    // Проп для выбранного стиля, отображаемый под кнопкой стилей
+    // Передается выбранный стиль от родителя
     selectedStyle: {
       type: String,
       default: "(No style)"
+    },
+    // Список стилей, полученных с backend
+    styles: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
     return {
       selectedTool: "pencil",
       selectedLanguage: this.language,
-      isDarkTheme: false
+      isDarkTheme: false,
+      localPenSize: 2,
+      localPenColor: "#000000",
+      showStylesPanel: false
     };
   },
   computed: {
     labels() {
-      if (this.selectedLanguage === "ru") {
-        return {
-          pencil: "Карандаш",
-          eraser: "Ластик",
-          line: "Линия",
-          styles: "Стили",
-          theme: "Тема",
-          language: "Язык",
-          clear: "Очистить",
-          info: "Инфо"
-        };
-      } else {
-        return {
-          pencil: "Pencil",
-          eraser: "Eraser",
-          line: "Line",
-          styles: "Styles",
-          theme: "Theme",
-          language: "Language",
-          clear: "Clear",
-          info: "Info"
-        };
-      }
+      return this.selectedLanguage === "ru"
+          ? {
+            pencil: "Карандаш",
+            eraser: "Ластик",
+            line: "Линия",
+            undo: "Отменить",
+            redo: "Повторить",
+            styles: "Стили",
+            theme: "Тема",
+            language: "Язык",
+            clear: "Очистить",
+            info: "Инфо",
+            size: "Размеры"
+          }
+          : {
+            pencil: "Pencil",
+            eraser: "Eraser",
+            line: "Line",
+            undo: "Undo",
+            redo: "Redo",
+            styles: "Styles",
+            theme: "Theme",
+            language: "Language",
+            clear: "Clear",
+            info: "Info",
+            size: "Size"
+          };
     }
   },
   watch: {
@@ -112,17 +157,55 @@ export default {
     }
   },
   mounted() {
-    // Проверяем, активна ли тёмная тема при загрузке DOM
     this.isDarkTheme = document.body.classList.contains("dark-theme");
+    document.addEventListener("click", this.handleClickOutside);
+  },
+  beforeDestroy() {
+    document.removeEventListener("click", this.handleClickOutside);
   },
   methods: {
     setTool(tool) {
       this.selectedTool = tool;
-      this.$emit("update-pen", { tool });
+      if (tool === "pencil" || tool === "line") {
+        this.localPenColor = "#000000";
+        this.$emit("update-pen", {
+          tool,
+          penSize: this.localPenSize,
+          penColor: "#000000"
+        });
+      } else {
+        this.$emit("update-pen", {
+          tool,
+          penSize: this.localPenSize,
+          penColor: this.localPenColor
+        });
+      }
+    },
+    undoAction() {
+      this.$emit("undo");
+    },
+    redoAction() {
+      this.$emit("redo");
+    },
+    updateBrushSize() {
+      this.$emit("update-pen", {
+        penSize: this.localPenSize,
+        penColor:
+            this.selectedTool === "pencil" || this.selectedTool === "line"
+                ? "#000000"
+                : this.localPenColor
+      });
     },
     toggleStylesPanel() {
-      // Эмиттируем событие toggle-styles-panel, которое родительский компонент обработает
-      this.$emit("toggle-styles-panel");
+      this.showStylesPanel = !this.showStylesPanel;
+    },
+    handleClickOutside(event) {
+      if (this.showStylesPanel) {
+        const panel = this.$refs.stylesPanel;
+        if (panel && !panel.contains(event.target) && !this.$el.contains(event.target)) {
+          this.showStylesPanel = false;
+        }
+      }
     },
     toggleTheme() {
       this.isDarkTheme = !this.isDarkTheme;
@@ -138,31 +221,44 @@ export default {
     },
     showInfo() {
       alert("Небольшой текст информации");
+    },
+    selectStyle(style) {
+      this.$emit("update-style", style.name);
+      this.showStylesPanel = false;
+    },
+    cycleWindowSize() {
+      this.$emit("cycle-window-size");
     }
   }
 };
 </script>
 
 <style scoped>
-.toolbar {
+.toolbar-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Базовая панель (toolbar-base) – всегда видна */
+.toolbar-base {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;             /* Панель занимает всю высоту экрана */
-  width: 60px;               /* Фиксированная ширина панели */
-  background-color: #28be46; /* Фоновый цвет панели */
+  width: 60px;
+  height: 100vh;
+  background-color: #28be46;
+  border-right: 1px solid #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px 0;
   box-sizing: border-box;
-  z-index: 1000;
 }
 
+/* Логотип */
 .logo-container {
   margin-bottom: 20px;
 }
-
 .logo {
   width: 40px;
   height: 40px;
@@ -177,11 +273,9 @@ export default {
   justify-content: center;
   align-items: center;
 }
-
-/* Общие стили для кнопок */
-.toolbar button {
+.toolbar-base button {
   width: 40px;
-  height: 60px; /* Увеличенная высота для размещения иконки и подписи */
+  height: 60px;
   margin-bottom: 15px;
   background: none;
   border: none;
@@ -192,36 +286,92 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.2s;
 }
-
-.toolbar button.selected {
+.toolbar-base button.selected {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
-
 .icon {
   font-size: 24px;
   line-height: 1;
 }
-
 .btn-label {
   font-size: 10px;
   margin-top: 4px;
   text-align: center;
 }
 
-/* Дополнительный текст под кнопкой со стилями */
-.selected-style {
+/* Контроль размера кисти */
+.pen-size-control {
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.pen-size-control input[type="range"] {
+  width: 100%;
+}
+.pen-size-label {
   font-size: 9px;
   margin-top: 2px;
-  color: #ddd;
+  text-align: center;
 }
 
-/* Нижняя часть панели с дополнительными кнопками */
+/* Нижняя часть базовой панели с дополнительными кнопками */
 .bottom-controls {
   margin-top: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
+
+/* Выдвигаемая панель со стилями – отдельный фиксированный элемент */
+.styles-panel {
+  position: fixed;
+  top: 0;
+  left: 60px; /* появляется справа от базовой панели */
+  width: 190px;
+  height: 100vh;
+  background-color: #28be46; /* тот же фон */
+  border-left: 1px solid #fff;
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 1200;
+}
+.styles-panel h3 {
+  margin-top: 0;
+  color: #fff;
+}
+.styles-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+}
+.styles-panel li {
+  padding: 8px 0;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+.styles-panel li:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Transition для выдвижения панели */
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease;
+}
+.slide-enter,
+.slide-leave-to {
+  transform: translateX(-100%);
+}
+.selected-style {
+  font-size: 9px;
+  margin-top: 2px;
+  color: #ddd;
+}
+
 </style>

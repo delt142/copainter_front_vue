@@ -5,7 +5,7 @@
       <img src="/top-icon.png" alt="Top Icon" />
     </div>
 
-    <!-- Фиксированная панель инструментов слева (Toolbar) -->
+    <!-- Компонент Toolbar -->
     <Toolbar
         :styles="styles"
         :language="currentLanguage"
@@ -20,11 +20,11 @@
         @preset-change="applyPreset"
         @update:language="updateLanguage"
         @toggle-styles-panel="toggleStylesPanel"
+        @cycle-window-size="cycleWindowSize"
     />
 
-    <!-- Основное содержимое, центрированное с учетом Toolbar -->
+    <!-- Основное содержимое -->
     <div class="main-container">
-      <!-- Контейнер для областей (рисования и генерации) -->
       <div class="windows-container">
         <!-- Область рисования -->
         <div class="drawing-window">
@@ -36,44 +36,31 @@
         </div>
         <!-- Область генерации -->
         <div class="generation-window">
-          <div
-              class="generation-container"
-              :style="{ width: generationDimensions.width + 'px', height: generationDimensions.height + 'px' }"
-          >
-            <!-- Если resultImage пустой, можно показывать пустой фон. Если генерируется, показываем loading.gif -->
-            <img
-                :src="resultImage"
-                alt="Сгенерированное изображение"
-                v-if="resultImage"
-            />
+          <div class="generation-container" :style="{ width: generationDimensions.width + 'px', height: generationDimensions.height + 'px' }">
+            <!-- Пока идёт генерация показывается GIF, иначе результат -->
+            <img :src="resultImage" alt="Сгенерированное изображение" v-if="resultImage" />
           </div>
         </div>
       </div>
 
-      <!-- Контейнер для кнопки генерации, расположенной под окнами по центру -->
+      <!-- Кнопка генерации изображения -->
       <div class="generate-button-container">
-        <button
-            class="generate-btn"
-            @click="generateImage"
-            :disabled="isGenerating"
-        >
+        <button class="generate-btn" @click="generateImage" :disabled="isGenerating">
           {{ generateButtonLabel }}
         </button>
       </div>
     </div>
 
-    <!-- Выдвигающаяся панель со стилями -->
+    <!-- Панель со стилями -->
     <transition name="slide">
       <div v-if="showStylesPanel" class="styles-panel">
-        <h3>Стили</h3>
+        <h3>{{ labels.styles }}</h3>
         <ul>
           <li v-for="style in styles" :key="style.name" @click="selectStyle(style)">
             {{ style.name }}
           </li>
         </ul>
-        <button class="close-btn" @click="toggleStylesPanel">
-          Закрыть
-        </button>
+        <button class="close-btn" @click="toggleStylesPanel">Закрыть</button>
       </div>
     </transition>
   </div>
@@ -90,24 +77,25 @@ export default {
     return {
       currentLanguage: "en",
       languages: ["en", "ru"],
-      // Стили загружаются с backend через endpoint /styles
+      // Стили, загружаемые с backend
       styles: [],
       selectedStyle: "(No style)",
-      drawingDimensions: { width: 400, height: 400 },
-      generationDimensions: { width: 400, height: 400 },
+      // Пресеты размеров окон
       presets: [
         { drawing: { width: 400, height: 400 }, generation: { width: 800, height: 800 } },
         { drawing: { width: 600, height: 600 }, generation: { width: 600, height: 600 } },
         { drawing: { width: 800, height: 800 }, generation: { width: 400, height: 400 } }
       ],
+      currentPresetIndex: 0,
+      drawingDimensions: { width: 400, height: 400 },
+      generationDimensions: { width: 800, height: 800 },
       resultImage: "",
-      showStylesPanel: false, // Флаг отображения панели со стилями
-      isGenerating: false // Флаг, указывающий, идет ли генерация изображения
+      showStylesPanel: false,
+      isGenerating: false
     };
   },
   computed: {
     generateButtonLabel() {
-      // Возвращает надпись для кнопки генерации в зависимости от языка
       return this.currentLanguage === "ru" ? "Сгенерировать изображение" : "Generate Image";
     }
   },
@@ -128,34 +116,31 @@ export default {
         console.error("Ошибка запроса стилей:", error);
       }
     },
-    // Переключение видимости панели со стилями
     toggleStylesPanel() {
       this.showStylesPanel = !this.showStylesPanel;
     },
-    // Выбор стиля из панели – устанавливаем выбранный стиль и закрываем панель
     selectStyle(style) {
       this.selectedStyle = style.name;
       this.toggleStylesPanel();
-      // Эмиттируем событие, если нужно уведомить родителя
       this.updateStyle(this.selectedStyle);
     },
     updateStyle(newStyle) {
       this.selectedStyle = newStyle;
     },
-    // Выбор предустановленного варианта
     applyPreset(index) {
       const preset = this.presets[index];
       this.drawingDimensions = { ...preset.drawing };
       this.generationDimensions = { ...preset.generation };
-      this.$refs.canvasComponent.resizeCanvas(
-          this.drawingDimensions.width,
-          this.drawingDimensions.height
-      );
+      if (this.$refs.canvasComponent && typeof this.$refs.canvasComponent.resizeCanvas === "function") {
+        this.$refs.canvasComponent.resizeCanvas(
+            this.drawingDimensions.width,
+            this.drawingDimensions.height
+        );
+      }
     },
     async generateImage() {
-      // Блокируем кнопку генерации, показываем GIF:
       this.isGenerating = true;
-      // Устанавливаем локальный gif (например, в каталоге public)
+      // Показываем GIF на время генерации (loading.gif должен быть в public)
       this.resultImage = "/loading.gif";
 
       const canvas = this.$refs.canvasComponent.getCanvas();
@@ -177,13 +162,13 @@ export default {
           this.resultImage = URL.createObjectURL(blob);
         } else {
           console.error("Ошибка генерации:", await response.text());
-          this.resultImage = ""; // Очищаем в случае ошибки
+          this.resultImage = "";
         }
       } catch (error) {
         console.error("Ошибка при запросе:", error);
         this.resultImage = "";
       } finally {
-        this.isGenerating = false; // Разблокируем кнопку в любом случае
+        this.isGenerating = false;
       }
     },
     updatePen(updated) {
@@ -200,20 +185,30 @@ export default {
     },
     updateLanguage(newLanguage) {
       this.currentLanguage = newLanguage;
+    },
+    cycleWindowSize() {
+      // Циклически меняем пресет: увеличиваем индекс, если достигнут конец, сбрасываем на ноль
+      this.currentPresetIndex = (this.currentPresetIndex + 1) % this.presets.length;
+      const preset = this.presets[this.currentPresetIndex];
+      this.drawingDimensions = { ...preset.drawing };
+      this.generationDimensions = { ...preset.generation };
+      if (this.$refs.canvasComponent && typeof this.$refs.canvasComponent.resizeCanvas === "function") {
+        this.$refs.canvasComponent.resizeCanvas(
+            this.drawingDimensions.width,
+            this.drawingDimensions.height
+        );
+      }
     }
   }
 };
 </script>
 
 <style scoped>
-/* Основной контейнер приложения */
 #app {
   position: relative;
   min-height: 100vh;
   max-width: 100%;
 }
-
-/* Иконка в верхнем правом углу */
 .top-right-icon {
   position: fixed;
   top: 10px;
@@ -227,20 +222,16 @@ export default {
   height: 100%;
   object-fit: contain;
 }
-
-/* Основное содержимое, центрированное с учетом фиксированного Toolbar */
 .main-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  margin-left: 60px; /* Отступ для Toolbar */
+  margin-left: 60px;
   box-sizing: border-box;
   padding: 20px;
 }
-
-/* Контейнер для областей (рисования и генерации) — располагаем их в одну строку */
 .windows-container {
   display: flex;
   flex-direction: row;
@@ -248,14 +239,10 @@ export default {
   justify-content: center;
   align-items: center;
 }
-
-/* Окна рисования и генерации: задаем рамки */
 .drawing-window,
 .generation-window {
   border: 2px solid #000;
 }
-
-/* Контейнер области генерации */
 .generation-container {
   display: flex;
   justify-content: center;
@@ -269,8 +256,6 @@ export default {
   height: 100%;
   object-fit: contain;
 }
-
-/* Контейнер для кнопки генерации, размещенной под окнами */
 .generate-button-container {
   margin-top: 20px;
   width: 100%;
@@ -283,33 +268,120 @@ export default {
   cursor: pointer;
 }
 
-/* Стили для выдвигаемой панели со стилями */
-.styles-panel {
+/* Стили для базовой панели Toolbar */
+.toolbar-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+.toolbar-base {
   position: fixed;
   top: 0;
   left: 0;
-  width: 250px;
+  width: 60px;
   height: 100vh;
-  background-color: #fff;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
-  z-index: 1200;
+  background-color: #28be46;
+  border-right: 1px solid #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+  box-sizing: border-box;
+}
+.logo-container {
+  margin-bottom: 20px;
+}
+.logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.tools {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.toolbar-base button {
+  width: 40px;
+  height: 60px;
+  margin-bottom: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.toolbar-base button.selected {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+.icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.btn-label {
+  font-size: 10px;
+  margin-top: 4px;
+  text-align: center;
+}
+.pen-size-control {
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.pen-size-control input[type="range"] {
+  width: 100%;
+}
+.pen-size-label {
+  font-size: 9px;
+  margin-top: 2px;
+  text-align: center;
+}
+.bottom-controls {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Выдвигаемая панель со стилями */
+.styles-panel {
+  position: fixed;
+  top: 0;
+  left: 60px;
+  width: 190px;
+  height: 100vh;
+  background-color: #28be46;
+  border-left: 1px solid #fff;
   padding: 20px;
   box-sizing: border-box;
+  z-index: 1200;
 }
 .styles-panel h3 {
   margin-top: 0;
+  color: #fff;
 }
 .styles-panel ul {
   list-style: none;
   padding: 0;
+  margin: 0;
+  color: #fff;
 }
 .styles-panel li {
   padding: 8px 0;
   cursor: pointer;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
 .styles-panel li:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(255, 255, 255, 0.2);
 }
 .styles-panel .close-btn {
   margin-top: 20px;
@@ -317,7 +389,7 @@ export default {
   cursor: pointer;
 }
 
-/* Переход для панели (выдвижение) */
+/* Transition для панели */
 .slide-enter-active,
 .slide-leave-active {
   transition: transform 0.3s ease;
