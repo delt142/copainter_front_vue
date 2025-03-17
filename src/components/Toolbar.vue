@@ -46,8 +46,8 @@
           <span class="selected-style">{{ selectedStyle }}</span>
         </button>
         <!-- Кнопка переключения темы -->
-        <button @click="toggleTheme">
-          <span class="icon">{{ isDarkTheme ? '🌞' : '🌜' }}</span>
+        <button @click="toggleTheme" class="theme-toggle-btn">
+          <img :src="themeIcon" alt="Toggle Theme" class="theme-icon" />
           <span class="btn-label">{{ labels.theme }}</span>
         </button>
         <!-- Кнопка смены языка -->
@@ -121,6 +121,10 @@ export default {
     };
   },
   computed: {
+
+    themeIcon() {
+      return this.isDarkTheme ? '/public/toolbar_ico/sun.svg' : '/public/toolbar_ico/moon.svg';
+    },
     labels() {
       return this.selectedLanguage === "ru"
           ? {
@@ -164,6 +168,7 @@ export default {
     document.removeEventListener("click", this.handleClickOutside);
   },
   methods: {
+
     setTool(tool) {
       this.selectedTool = tool;
       if (tool === "pencil" || tool === "line") {
@@ -234,6 +239,29 @@ export default {
 </script>
 
 <style scoped>
+
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Дополнительные отступы можно настроить по необходимости */
+}
+
+.theme-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.btn-label {
+  font-size: 10px;
+  margin-top: 4px;
+  text-align: center;
+}
+
 .toolbar-wrapper {
   position: relative;
   z-index: 1000;
