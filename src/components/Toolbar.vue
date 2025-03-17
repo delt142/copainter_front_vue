@@ -1,79 +1,72 @@
 <template>
   <div class="toolbar-wrapper">
-    <!-- Базовая панель (toolbar-base) – всегда видна -->
+    <!-- Base Panel -->
     <div class="toolbar-base">
       <div class="logo-container">
         <img src="/logo.png" alt="Logo" class="logo" />
       </div>
 
-      <!-- Основные инструменты (иконки выровнены по центру) -->
+      <!-- Main Tools -->
       <div class="tools">
         <button :class="{ selected: selectedTool === 'pencil' }" @click="setTool('pencil')">
-          <span class="icon">✏️</span>
+          <img :src="toolIcons.pencil" alt="Pencil Icon" class="icon" />
           <span class="btn-label">{{ labels.pencil }}</span>
         </button>
         <button :class="{ selected: selectedTool === 'eraser' }" @click="setTool('eraser')">
-          <span class="icon">🧽</span>
+          <img :src="toolIcons.eraser" alt="Eraser Icon" class="icon" />
           <span class="btn-label">{{ labels.eraser }}</span>
         </button>
         <button :class="{ selected: selectedTool === 'line' }" @click="setTool('line')">
-          <span class="icon">📏</span>
+          <img :src="toolIcons.line" alt="Line Icon" class="icon" />
           <span class="btn-label">{{ labels.line }}</span>
         </button>
         <button @click="undoAction">
-          <span class="icon">↶</span>
+          <img :src="toolIcons.undo" alt="Undo Icon" class="icon" />
           <span class="btn-label">{{ labels.undo }}</span>
         </button>
         <button @click="redoAction">
-          <span class="icon">↷</span>
+          <img :src="toolIcons.redo" alt="Redo Icon" class="icon" />
           <span class="btn-label">{{ labels.redo }}</span>
         </button>
       </div>
 
-      <!-- Контроль размера кисти -->
+      <!-- Pen Size Control -->
       <div class="pen-size-control">
         <input type="range" min="1" max="24" v-model.number="localPenSize" @input="updateBrushSize" />
         <span class="pen-size-label">{{ localPenSize }} px</span>
       </div>
 
-      <!-- Нижняя часть панели с дополнительными кнопками -->
+      <!-- Bottom Controls -->
       <div class="bottom-controls">
-        <!-- Кнопка для показа/скрытия панели со стилями.
-             Под кнопкой выводится выбранный стиль. -->
         <button @click.stop="toggleStylesPanel">
-          <span class="icon">🎨</span>
+          <img :src="toolIcons.styles" alt="Styles Icon" class="icon" />
           <span class="btn-label">{{ labels.styles }}</span>
           <span class="selected-style">{{ selectedStyle }}</span>
         </button>
-        <!-- Кнопка переключения темы -->
         <button @click="toggleTheme" class="theme-toggle-btn">
-          <img :src="themeIcon" alt="Toggle Theme" class="theme-icon" />
+          <img :src="themeIcon" alt="Toggle Theme Icon" class="theme-icon" />
           <span class="btn-label">{{ labels.theme }}</span>
         </button>
-        <!-- Кнопка смены языка -->
         <button @click="changeLanguage">
-          <span class="icon">{{ selectedLanguage === 'en' ? 'RU' : 'EN' }}</span>
+          <img :src="toolIcons.language" alt="Language Icon" class="icon" />
           <span class="btn-label">{{ labels.language }}</span>
         </button>
-        <!-- Новая кнопка для циклического изменения размеров окон -->
         <button @click="cycleWindowSize">
-          <span class="icon">📐</span>
+          <img :src="toolIcons.size" alt="Size Icon" class="icon" />
           <span class="btn-label">{{ labels.size }}</span>
         </button>
-        <!-- Кнопка очистки Canvas -->
         <button @click="clearCanvas">
-          <span class="icon">🧹</span>
+          <img :src="toolIcons.clear" alt="Clear Icon" class="icon" />
           <span class="btn-label">{{ labels.clear }}</span>
         </button>
-        <!-- Кнопка информации -->
         <button @click="showInfo">
-          <span class="icon">ℹ️</span>
+          <img :src="toolIcons.info" alt="Info Icon" class="icon" />
           <span class="btn-label">{{ labels.info }}</span>
         </button>
       </div>
     </div>
 
-    <!-- Выдвигаемая панель со стилями (styles-panel) – отдельный фиксированный элемент -->
+    <!-- Styles Panel -->
     <transition name="slide">
       <div v-if="showStylesPanel" ref="stylesPanel" class="styles-panel" @click.stop>
         <h3>{{ labels.styles }}</h3>
@@ -99,12 +92,10 @@ export default {
       type: Array,
       default: () => ["en", "ru"]
     },
-    // Передается выбранный стиль от родителя
     selectedStyle: {
       type: String,
       default: "(No style)"
     },
-    // Список стилей, полученных с backend
     styles: {
       type: Array,
       default: () => []
@@ -121,9 +112,26 @@ export default {
     };
   },
   computed: {
-
     themeIcon() {
-      return this.isDarkTheme ? '/public/toolbar_ico/sun.svg' : '/public/toolbar_ico/moon.svg';
+      return this.isDarkTheme
+          ? '/public/toolbar_ico/dark_ico/sun.svg'
+          : '/public/toolbar_ico/light_ico/moon.svg';
+    },
+    toolIcons() {
+      const prefix = this.isDarkTheme ? '/public/toolbar_ico/dark_ico/' : '/public/toolbar_ico/light_ico/';
+
+      return {
+        pencil: `${prefix}pencil.svg`,
+        eraser: `${prefix}eraser.svg`,
+        line: `${prefix}line.svg`,
+        undo: `${prefix}undo.svg`,
+        redo: `${prefix}redo.svg`,
+        styles: `${prefix}styles.svg`,
+        clear: `${prefix}clear.svg`,
+        info: `${prefix}info.svg`,
+        size: `${prefix}size.svg`,
+        language: this.selectedLanguage === 'en' ? `${prefix}ru.svg` : `${prefix}en.svg`
+      };
     },
     labels() {
       return this.selectedLanguage === "ru"
@@ -168,7 +176,6 @@ export default {
     document.removeEventListener("click", this.handleClickOutside);
   },
   methods: {
-
     setTool(tool) {
       this.selectedTool = tool;
       if (tool === "pencil" || tool === "line") {
@@ -217,8 +224,7 @@ export default {
       document.body.classList.toggle("dark-theme", this.isDarkTheme);
     },
     changeLanguage() {
-      const nextLanguage = this.selectedLanguage === "en" ? "ru" : "en";
-      this.selectedLanguage = nextLanguage;
+      this.selectedLanguage = this.selectedLanguage === "en" ? "ru" : "en";
       this.$emit("update:language", this.selectedLanguage);
     },
     clearCanvas() {
@@ -239,7 +245,6 @@ export default {
 </script>
 
 <style scoped>
-
 .theme-toggle-btn {
   background: none;
   border: none;
@@ -248,7 +253,6 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Дополнительные отступы можно настроить по необходимости */
 }
 
 .theme-icon {
@@ -262,12 +266,17 @@ export default {
   text-align: center;
 }
 
+.icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
 .toolbar-wrapper {
   position: relative;
   z-index: 1000;
 }
 
-/* Базовая панель (toolbar-base) – всегда видна */
 .toolbar-base {
   position: fixed;
   top: 0;

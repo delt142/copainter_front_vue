@@ -82,12 +82,12 @@ export default {
       selectedStyle: "(No style)",
       // Пресеты размеров окон
       presets: [
-        { drawing: { width: 400, height: 400 }, generation: { width: 800, height: 800 } },
-        { drawing: { width: 600, height: 600 }, generation: { width: 600, height: 600 } },
-        { drawing: { width: 800, height: 800 }, generation: { width: 400, height: 400 } }
+        { drawing: { width: 800, height: 800 }, generation: { width: 800, height: 800 } },
+        // { drawing: { width: 900, height: 900 }, generation: { width: 300, height: 300 } },
+        // { drawing: { width: 300, height: 300 }, generation: { width: 900, height: 900 } }
       ],
       currentPresetIndex: 0,
-      drawingDimensions: { width: 400, height: 400 },
+      drawingDimensions: { width: 800, height: 800 },
       generationDimensions: { width: 800, height: 800 },
       resultImage: "",
       showStylesPanel: false,
@@ -213,8 +213,7 @@ export default {
   position: fixed;
   top: 10px;
   right: 10px;
-  width: 40px;
-  height: 40px;
+  width: 200px;
   z-index: 1100;
 }
 .top-right-icon img {
