@@ -8,23 +8,35 @@
 
       <!-- Main Tools -->
       <div class="tools">
-        <button :class="{ selected: selectedTool === 'pencil' }" @click="setTool('pencil')">
+        <button
+            v-if="buttonsVisibility.pencil"
+            :class="{ selected: selectedTool === 'pencil' }"
+            @click="setTool('pencil')"
+        >
           <img :src="toolIcons.pencil" alt="Pencil Icon" class="icon" />
           <span class="btn-label">{{ labels.pencil }}</span>
         </button>
-        <button :class="{ selected: selectedTool === 'eraser' }" @click="setTool('eraser')">
+        <button
+            v-if="buttonsVisibility.eraser"
+            :class="{ selected: selectedTool === 'eraser' }"
+            @click="setTool('eraser')"
+        >
           <img :src="toolIcons.eraser" alt="Eraser Icon" class="icon" />
           <span class="btn-label">{{ labels.eraser }}</span>
         </button>
-        <button :class="{ selected: selectedTool === 'line' }" @click="setTool('line')">
+        <button
+            v-if="buttonsVisibility.line"
+            :class="{ selected: selectedTool === 'line' }"
+            @click="setTool('line')"
+        >
           <img :src="toolIcons.line" alt="Line Icon" class="icon" />
           <span class="btn-label">{{ labels.line }}</span>
         </button>
-        <button @click="undoAction">
+        <button v-if="buttonsVisibility.undo" @click="undoAction">
           <img :src="toolIcons.undo" alt="Undo Icon" class="icon" />
           <span class="btn-label">{{ labels.undo }}</span>
         </button>
-        <button @click="redoAction">
+        <button v-if="buttonsVisibility.redo" @click="redoAction">
           <img :src="toolIcons.redo" alt="Redo Icon" class="icon" />
           <span class="btn-label">{{ labels.redo }}</span>
         </button>
@@ -32,34 +44,49 @@
 
       <!-- Pen Size Control -->
       <div class="pen-size-control">
-        <input type="range" min="1" max="24" v-model.number="localPenSize" @input="updateBrushSize" />
+        <input
+            type="range"
+            min="1"
+            max="24"
+            v-model.number="localPenSize"
+            @input="updateBrushSize"
+        />
+        <div class="pen-size-preview-container">
+          <div
+              class="pen-size-preview"
+              :style="{ width: localPenSize + 'px', height: localPenSize + 'px' }"
+          ></div>
+        </div>
         <span class="pen-size-label">{{ localPenSize }} px</span>
       </div>
 
       <!-- Bottom Controls -->
       <div class="bottom-controls">
-        <button @click.stop="toggleStylesPanel">
-          <img :src="toolIcons.styles" alt="Styles Icon" class="icon" />
+        <!-- Кнопка "Стили" с эмодзи -->
+        <button v-if="buttonsVisibility.styles" @click.stop="toggleStylesPanel">
+          <span class="icon">🎨</span>
           <span class="btn-label">{{ labels.styles }}</span>
           <span class="selected-style">{{ selectedStyle }}</span>
         </button>
-        <button @click="toggleTheme" class="theme-toggle-btn">
-          <img :src="themeIcon" alt="Toggle Theme Icon" class="theme-icon" />
+        <!-- Кнопка "Тема" с эмодзи (☀️ или 🌙) -->
+        <button v-if="buttonsVisibility.theme" @click="toggleTheme" class="theme-toggle-btn">
+          <span class="icon">{{ isDarkTheme ? '☀️' : '🌙' }}</span>
           <span class="btn-label">{{ labels.theme }}</span>
         </button>
-        <button @click="changeLanguage">
-          <img :src="toolIcons.language" alt="Language Icon" class="icon" />
+        <!-- Кнопка "Язык" с эмодзи (🇷🇺 или 🇬🇧) -->
+        <button v-if="buttonsVisibility.language" @click="changeLanguage">
+          <span class="icon">{{ selectedLanguage === 'en' ? '🇷🇺' : '🇬🇧' }}</span>
           <span class="btn-label">{{ labels.language }}</span>
         </button>
-        <button @click="cycleWindowSize">
+        <button v-if="buttonsVisibility.size" @click="cycleWindowSize">
           <img :src="toolIcons.size" alt="Size Icon" class="icon" />
           <span class="btn-label">{{ labels.size }}</span>
         </button>
-        <button @click="clearCanvas">
+        <button v-if="buttonsVisibility.clear" @click="clearCanvas">
           <img :src="toolIcons.clear" alt="Clear Icon" class="icon" />
           <span class="btn-label">{{ labels.clear }}</span>
         </button>
-        <button @click="showInfo">
+        <button v-if="buttonsVisibility.info" @click="showInfo">
           <img :src="toolIcons.info" alt="Info Icon" class="icon" />
           <span class="btn-label">{{ labels.info }}</span>
         </button>
@@ -99,6 +126,22 @@ export default {
     styles: {
       type: Array,
       default: () => []
+    },
+    buttonsVisibility: {
+      type: Object,
+      default: () => ({
+        pencil: true,
+        eraser: true,
+        line: true,
+        undo: true,
+        redo: true,
+        styles: true,
+        theme: false,
+        language: true,
+        size: false,
+        clear: true,
+        info: false
+      })
     }
   },
   data() {
@@ -112,25 +155,19 @@ export default {
     };
   },
   computed: {
-    themeIcon() {
-      return this.isDarkTheme
-          ? '/public/toolbar_ico/dark_ico/sun.svg'
-          : '/public/toolbar_ico/light_ico/moon.svg';
-    },
     toolIcons() {
-      const prefix = this.isDarkTheme ? '/public/toolbar_ico/dark_ico/' : '/public/toolbar_ico/light_ico/';
-
+      const prefix = this.isDarkTheme
+          ? "/public/toolbar_ico/dark_ico/"
+          : "/public/toolbar_ico/light_ico/";
       return {
         pencil: `${prefix}pencil.svg`,
         eraser: `${prefix}eraser.svg`,
         line: `${prefix}line.svg`,
         undo: `${prefix}undo.svg`,
         redo: `${prefix}redo.svg`,
-        styles: `${prefix}styles.svg`,
         clear: `${prefix}clear.svg`,
         info: `${prefix}info.svg`,
-        size: `${prefix}size.svg`,
-        language: this.selectedLanguage === 'en' ? `${prefix}ru.svg` : `${prefix}en.svg`
+        size: `${prefix}size.svg`
       };
     },
     labels() {
@@ -255,7 +292,8 @@ export default {
   align-items: center;
 }
 
-.theme-icon {
+.theme-icon,
+.icon {
   width: 24px;
   height: 24px;
 }
@@ -264,12 +302,6 @@ export default {
   font-size: 10px;
   margin-top: 4px;
   text-align: center;
-}
-
-.icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
 }
 
 .toolbar-wrapper {
@@ -292,17 +324,16 @@ export default {
   box-sizing: border-box;
 }
 
-/* Логотип */
 .logo-container {
   margin-bottom: 20px;
 }
+
 .logo {
   width: 40px;
   height: 40px;
   object-fit: contain;
 }
 
-/* Блок с основными инструментами */
 .tools {
   flex: 1;
   display: flex;
@@ -310,6 +341,7 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .toolbar-base button {
   width: 40px;
   height: 60px;
@@ -325,21 +357,12 @@ export default {
   justify-content: center;
   transition: background-color 0.2s;
 }
+
 .toolbar-base button.selected {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
-.icon {
-  font-size: 24px;
-  line-height: 1;
-}
-.btn-label {
-  font-size: 10px;
-  margin-top: 4px;
-  text-align: center;
-}
 
-/* Контроль размера кисти */
 .pen-size-control {
   width: 40px;
   display: flex;
@@ -347,16 +370,33 @@ export default {
   align-items: center;
   margin-bottom: 15px;
 }
+
 .pen-size-control input[type="range"] {
   width: 100%;
 }
+
 .pen-size-label {
   font-size: 9px;
   margin-top: 2px;
   text-align: center;
 }
 
-/* Нижняя часть базовой панели с дополнительными кнопками */
+.pen-size-preview-container {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  margin: 5px 0;
+}
+
+.pen-size-preview {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background-color: #000;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .bottom-controls {
   margin-top: auto;
   display: flex;
@@ -364,51 +404,54 @@ export default {
   align-items: center;
 }
 
-/* Выдвигаемая панель со стилями – отдельный фиксированный элемент */
 .styles-panel {
   position: fixed;
   top: 0;
-  left: 60px; /* появляется справа от базовой панели */
+  left: 60px;
   width: 190px;
   height: 100vh;
-  background-color: #28be46; /* тот же фон */
+  background-color: #28be46;
   border-left: 1px solid #fff;
   padding: 20px;
   box-sizing: border-box;
   z-index: 1200;
 }
+
 .styles-panel h3 {
   margin-top: 0;
   color: #fff;
 }
+
 .styles-panel ul {
   list-style: none;
   padding: 0;
   margin: 0;
   color: #fff;
 }
+
 .styles-panel li {
   padding: 8px 0;
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
+
 .styles-panel li:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Transition для выдвижения панели */
 .slide-enter-active,
 .slide-leave-active {
   transition: transform 0.3s ease;
 }
+
 .slide-enter,
 .slide-leave-to {
   transform: translateX(-100%);
 }
+
 .selected-style {
   font-size: 9px;
   margin-top: 2px;
   color: #ddd;
 }
-
 </style>

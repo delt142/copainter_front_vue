@@ -7,6 +7,7 @@
 
     <!-- Компонент Toolbar -->
     <Toolbar
+        :buttonsVisibility="buttonsVisibility"
         :styles="styles"
         :language="currentLanguage"
         :languages="languages"
@@ -36,7 +37,13 @@
         </div>
         <!-- Область генерации -->
         <div class="generation-window">
-          <div class="generation-container" :style="{ width: generationDimensions.width + 'px', height: generationDimensions.height + 'px' }">
+          <div
+              class="generation-container"
+              :style="{
+              width: generationDimensions.width + 'px',
+              height: generationDimensions.height + 'px'
+            }"
+          >
             <!-- Пока идёт генерация показывается GIF, иначе результат -->
             <img :src="resultImage" alt="Сгенерированное изображение" v-if="resultImage" />
           </div>
@@ -83,21 +90,32 @@ export default {
       // Пресеты размеров окон
       presets: [
         { drawing: { width: 800, height: 800 }, generation: { width: 800, height: 800 } },
-        // { drawing: { width: 900, height: 900 }, generation: { width: 300, height: 300 } },
-        // { drawing: { width: 300, height: 300 }, generation: { width: 900, height: 900 } }
       ],
       currentPresetIndex: 0,
       drawingDimensions: { width: 800, height: 800 },
       generationDimensions: { width: 800, height: 800 },
       resultImage: "",
       showStylesPanel: false,
-      isGenerating: false
+      isGenerating: false,
+      buttonsVisibility: {
+        pencil: true,
+        eraser: true,
+        line: true,
+        undo: true,
+        redo: true,
+        styles: true,
+        theme: false,
+        language: true,
+        size: false,
+        clear: true,
+        info: false,
+      },
     };
   },
   computed: {
     generateButtonLabel() {
       return this.currentLanguage === "ru" ? "Сгенерировать изображение" : "Generate Image";
-    }
+    },
   },
   mounted() {
     this.fetchStyles();
@@ -144,7 +162,7 @@ export default {
       this.resultImage = "/loading.gif";
 
       const canvas = this.$refs.canvasComponent.getCanvas();
-      let dataUrl = canvas.toDataURL("image/png");
+      const dataUrl = canvas.toDataURL("image/png");
       const base64Image = dataUrl.split(",")[1];
 
       try {
@@ -153,8 +171,8 @@ export default {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             image: base64Image,
-            style: this.selectedStyle
-          })
+            style: this.selectedStyle,
+          }),
         });
 
         if (response.ok) {
@@ -198,8 +216,8 @@ export default {
             this.drawingDimensions.height
         );
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -213,7 +231,7 @@ export default {
   position: fixed;
   top: 10px;
   right: 10px;
-  width: 200px;
+  width: 400px;
   z-index: 1100;
 }
 .top-right-icon img {
@@ -329,6 +347,8 @@ export default {
   margin-top: 4px;
   text-align: center;
 }
+
+/* Контроль размера кисти */
 .pen-size-control {
   width: 40px;
   display: flex;
@@ -344,6 +364,8 @@ export default {
   margin-top: 2px;
   text-align: center;
 }
+
+/* Нижняя часть базовой панели с дополнительными кнопками */
 .bottom-controls {
   margin-top: auto;
   display: flex;
@@ -382,13 +404,6 @@ export default {
 .styles-panel li:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
-.styles-panel .close-btn {
-  margin-top: 20px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-/* Transition для панели */
 .slide-enter-active,
 .slide-leave-active {
   transition: transform 0.3s ease;
