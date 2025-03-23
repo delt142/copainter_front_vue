@@ -68,14 +68,17 @@
           <span class="btn-label">{{ labels.styles }}</span>
           <span class="selected-style">{{ selectedStyle }}</span>
         </button>
-        <!-- Кнопка "Тема" с эмодзи (☀️ или 🌙) -->
+        <!-- Кнопка
+
+        "Тема" с эмодзи (☀️ или 🌙) -->
         <button v-if="buttonsVisibility.theme" @click="toggleTheme" class="theme-toggle-btn">
           <span class="icon">{{ isDarkTheme ? '☀️' : '🌙' }}</span>
           <span class="btn-label">{{ labels.theme }}</span>
         </button>
         <!-- Кнопка "Язык" с эмодзи (🇷🇺 или 🇬🇧) -->
         <button v-if="buttonsVisibility.language" @click="changeLanguage">
-          <span class="icon">{{ selectedLanguage === 'en' ? '🇷🇺' : '🇬🇧' }}</span>
+<!--          <span class="icon">{{ selectedLanguage === 'en' ? '🇬🇧' : '🇷🇺' }}</span>-->
+          <span class="icon">{{ selectedLanguage === 'en' ? 'EU' : 'RU' }}</span>
           <span class="btn-label">{{ labels.language }}</span>
         </button>
         <button v-if="buttonsVisibility.size" @click="cycleWindowSize">
@@ -136,7 +139,7 @@ export default {
         undo: true,
         redo: true,
         styles: true,
-        theme: false,
+        theme: true,
         language: true,
         size: false,
         clear: true,
