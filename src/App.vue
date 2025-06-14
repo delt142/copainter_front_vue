@@ -1,4 +1,5 @@
 <template>
+
   <div id="app">
     <!-- Иконка в верхнем правом углу -->
     <div class="top-right-icon">
@@ -22,10 +23,12 @@
         @update:language="updateLanguage"
         @toggle-styles-panel="toggleStylesPanel"
         @cycle-window-size="cycleWindowSize"
+        @toggle-history="toggleHistory"
     />
 
     <!-- Основное содержимое -->
     <div class="main-container">
+      <GeneratedImages :isVisible="showHistoryPanel" />
       <div class="windows-container">
         <!-- Область рисования -->
         <div class="drawing-window">
@@ -76,10 +79,11 @@
 <script>
 import CanvasComponent from "./components/Canvas.vue";
 import Toolbar from "./components/Toolbar.vue";
+import GeneratedImages from "./components/GeneratedImages.vue";
 
 export default {
   name: "App",
-  components: { CanvasComponent, Toolbar },
+  components: { CanvasComponent, Toolbar, GeneratedImages },
   data() {
     return {
       currentLanguage: "en",
@@ -97,6 +101,7 @@ export default {
       resultImage: "",
       showStylesPanel: false,
       isGenerating: false,
+      showHistoryPanel: false,
       buttonsVisibility: {
         pencil: true,
         eraser: true,
@@ -109,6 +114,7 @@ export default {
         size: false,
         clear: true,
         info: false,
+        history: true
       },
     };
   },
@@ -137,6 +143,13 @@ export default {
     toggleStylesPanel() {
       this.showStylesPanel = !this.showStylesPanel;
     },
+    toggleHistory() {
+      this.showHistoryPanel = !this.showHistoryPanel;
+      // Если есть конфликт со стилями панели, закройте ее
+      if (this.showHistoryPanel) {
+        this.showStylesPanel = false;
+      }
+    },
     selectStyle(style) {
       this.selectedStyle = style.name;
       this.toggleStylesPanel();
@@ -159,7 +172,8 @@ export default {
     async generateImage() {
       this.isGenerating = true;
       // Показываем GIF на время генерации (loading.gif должен быть в public)
-      this.resultImage = "/loading.gif";
+      // this.resultImage = "/loading.gif";
+      this.resultImage = "/fin1.gif";
 
       const canvas = this.$refs.canvasComponent.getCanvas();
       const dataUrl = canvas.toDataURL("image/png");
@@ -280,45 +294,30 @@ export default {
   justify-content: center;
 }
 .generate-btn {
-  padding: 8px 12px;
-  font-size: 16px;
+  padding: 12px 20px;
+  font-size: 18px;
+  //font-weight: bold;
+  color: #fff;
+  background-color: #28be46;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
-/* Стили для базовой панели Toolbar */
-.toolbar-wrapper {
-  position: relative;
-  z-index: 1000;
+.generate-btn:hover {
+  background-color: #1a8f34;
+  transform: scale(1.05);
 }
-.toolbar-base {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 60px;
-  height: 100vh;
-  background-color: #28be46;
-  border-right: 1px solid #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px 0;
-  box-sizing: border-box;
+
+.generate-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
 }
-.logo-container {
-  margin-bottom: 20px;
-}
-.logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-.tools {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
+
+
+
 .toolbar-base button {
   width: 40px;
   height: 60px;
@@ -338,40 +337,11 @@ export default {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
-.icon {
-  font-size: 24px;
-  line-height: 1;
-}
-.btn-label {
-  font-size: 10px;
-  margin-top: 4px;
-  text-align: center;
-}
 
-/* Контроль размера кисти */
-.pen-size-control {
-  width: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 15px;
-}
 .pen-size-control input[type="range"] {
   width: 100%;
 }
-.pen-size-label {
-  font-size: 9px;
-  margin-top: 2px;
-  text-align: center;
-}
 
-/* Нижняя часть базовой панели с дополнительными кнопками */
-.bottom-controls {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
 
 /* Выдвигаемая панель со стилями */
 .styles-panel {
@@ -404,12 +374,5 @@ export default {
 .styles-panel li:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.3s ease;
-}
-.slide-enter,
-.slide-leave-to {
-  transform: translateX(-100%);
-}
+
 </style>

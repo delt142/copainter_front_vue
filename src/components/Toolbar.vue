@@ -77,7 +77,6 @@
         </button>
         <!-- Кнопка "Язык" с эмодзи (🇷🇺 или 🇬🇧) -->
         <button v-if="buttonsVisibility.language" @click="changeLanguage">
-<!--          <span class="icon">{{ selectedLanguage === 'en' ? '🇬🇧' : '🇷🇺' }}</span>-->
           <span class="icon">{{ selectedLanguage === 'en' ? 'EU' : 'RU' }}</span>
           <span class="btn-label">{{ labels.language }}</span>
         </button>
@@ -93,6 +92,12 @@
           <img :src="toolIcons.info" alt="Info Icon" class="icon" />
           <span class="btn-label">{{ labels.info }}</span>
         </button>
+
+        <button v-if="buttonsVisibility.history" @click="$emit('toggle-history')">
+          📂 <span class="btn-label">История</span>
+        </button>
+
+
       </div>
     </div>
 
@@ -111,6 +116,9 @@
 </template>
 
 <script>
+// import GeneratedImages from "./components/GeneratedImages.vue";
+// export default {components: { GeneratedImages, Toolbar },
+
 export default {
   name: "Toolbar",
   props: {
@@ -143,7 +151,8 @@ export default {
         language: true,
         size: false,
         clear: true,
-        info: false
+        info: false,
+        history: true
       })
     }
   },
@@ -154,7 +163,8 @@ export default {
       isDarkTheme: false,
       localPenSize: 2,
       localPenColor: "#000000",
-      showStylesPanel: false
+      showStylesPanel: false,
+      showHistoryPanel: false,
     };
   },
   computed: {
@@ -216,6 +226,9 @@ export default {
     document.removeEventListener("click", this.handleClickOutside);
   },
   methods: {
+    toggleHistory() {
+      this.showHistoryPanel = !this.showHistoryPanel;
+    },
     setTool(tool) {
       this.selectedTool = tool;
       if (tool === "pencil" || tool === "line") {
