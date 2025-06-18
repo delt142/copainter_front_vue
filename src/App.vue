@@ -235,11 +235,16 @@ export default {
 };
 </script>
 
-<style scoped>
+<style >
+html,
+body {
+  overflow: hidden !important;
+}
 #app {
   position: relative;
   min-height: 100vh;
   max-width: 100%;
+  overflow: hidden;
 }
 .top-right-icon {
   position: fixed;
@@ -260,13 +265,14 @@ export default {
   justify-content: center;
   height: 100vh;
   margin-left: 60px;
+  margin-top: 40px;
   box-sizing: border-box;
   padding: 20px;
 }
 .windows-container {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 50px;
   justify-content: center;
   align-items: center;
 }

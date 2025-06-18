@@ -62,48 +62,72 @@
 
       <!-- Bottom Controls -->
       <div class="bottom-controls">
-        <!-- Кнопка "Стили" с эмодзи -->
+        <!-- Стили -->
         <button v-if="buttonsVisibility.styles" @click.stop="toggleStylesPanel">
           <span class="icon">🎨</span>
           <span class="btn-label">{{ labels.styles }}</span>
           <span class="selected-style">{{ selectedStyle }}</span>
         </button>
-        <!-- Кнопка
-
-        "Тема" с эмодзи (☀️ или 🌙) -->
-        <button v-if="buttonsVisibility.theme" @click="toggleTheme" class="theme-toggle-btn">
+        <!-- Тема -->
+        <button
+            v-if="buttonsVisibility.theme"
+            @click="toggleTheme"
+            class="theme-toggle-btn"
+        >
           <span class="icon">{{ isDarkTheme ? '☀️' : '🌙' }}</span>
           <span class="btn-label">{{ labels.theme }}</span>
         </button>
-        <!-- Кнопка "Язык" с эмодзи (🇷🇺 или 🇬🇧) -->
-        <button v-if="buttonsVisibility.language" @click="changeLanguage">
+        <!-- Язык -->
+        <button
+            v-if="buttonsVisibility.language"
+            @click="changeLanguage"
+        >
           <span class="icon">{{ selectedLanguage === 'en' ? 'EU' : 'RU' }}</span>
           <span class="btn-label">{{ labels.language }}</span>
         </button>
-        <button v-if="buttonsVisibility.size" @click="cycleWindowSize">
+        <button
+            v-if="buttonsVisibility.size"
+            @click="cycleWindowSize"
+        >
           <img :src="toolIcons.size" alt="Size Icon" class="icon" />
           <span class="btn-label">{{ labels.size }}</span>
         </button>
-        <button v-if="buttonsVisibility.clear" @click="clearCanvas">
+        <button
+            v-if="buttonsVisibility.clear"
+            @click="clearCanvas"
+        >
           <img :src="toolIcons.clear" alt="Clear Icon" class="icon" />
           <span class="btn-label">{{ labels.clear }}</span>
         </button>
-        <button v-if="buttonsVisibility.info" @click="showInfo">
+        <button
+            v-if="buttonsVisibility.info"
+            @click="showInfo"
+        >
           <img :src="toolIcons.info" alt="Info Icon" class="icon" />
           <span class="btn-label">{{ labels.info }}</span>
         </button>
-
-        <button v-if="buttonsVisibility.history" @click="$emit('toggle-history')">
+        <button
+            v-if="buttonsVisibility.history"
+            @click="$emit('toggle-history')"
+        >
           📂 <span class="btn-label">История</span>
         </button>
-
-
+        <!-- Кнопка для показа QR-картинок -->
+        <button @click="toggleQRImages">
+          <span class="icon">📷</span>
+          <span class="btn-label">ссылки</span>
+        </button>
       </div>
     </div>
 
     <!-- Styles Panel -->
     <transition name="slide">
-      <div v-if="showStylesPanel" ref="stylesPanel" class="styles-panel" @click.stop>
+      <div
+          v-if="showStylesPanel"
+          ref="stylesPanel"
+          class="styles-panel"
+          @click.stop
+      >
         <h3>{{ labels.styles }}</h3>
         <ul>
           <li v-for="style in styles" :key="style.name" @click="selectStyle(style)">
@@ -112,13 +136,25 @@
         </ul>
       </div>
     </transition>
+
+    <!-- Блок для отображения QR-картинок с подписями -->
+    <transition name="fade">
+      <div v-if="showQRImages" class="qr-images">
+        <figure class="qr-item">
+          <img src="/qr1.png" alt="QR 1" />
+          <figcaption>Галерея</figcaption>
+        </figure>
+        <figure class="qr-item">
+          <img src="/qr2.png" alt="QR 2" />
+          <figcaption>Сайт ИШИТР</figcaption>
+        </figure>
+      </div>
+    </transition>
+
   </div>
 </template>
 
 <script>
-// import GeneratedImages from "./components/GeneratedImages.vue";
-// export default {components: { GeneratedImages, Toolbar },
-
 export default {
   name: "Toolbar",
   props: {
@@ -165,6 +201,7 @@ export default {
       localPenColor: "#000000",
       showStylesPanel: false,
       showHistoryPanel: false,
+      showQRImages: false, // новое свойство для QR-картинок
     };
   },
   computed: {
@@ -292,12 +329,51 @@ export default {
     },
     cycleWindowSize() {
       this.$emit("cycle-window-size");
+    },
+    // Новый метод для переключения показа QR-картинок
+    toggleQRImages() {
+      this.showQRImages = !this.showQRImages;
     }
   }
 };
 </script>
 
-<style scoped>
+<style>
+/* Пример анимации для появления QR-картинок */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.qr-images {
+  margin-top: 100px;
+  display: flex;
+  gap: 150px;
+  justify-content: center;
+}
+
+.qr-images img {
+  max-width: 600px;
+  height: auto;
+}
+
+.qr-item {
+  text-align: center;
+}
+
+.qr-item img {
+  max-width: 600px;
+  height: auto;
+}
+
+.qr-item figcaption {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #555;
+}
+
 .theme-toggle-btn {
   background: none;
   border: none;
