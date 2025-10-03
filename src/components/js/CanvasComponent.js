@@ -65,12 +65,21 @@ export default {
         return dataUrl;
     },
     saveState() {
-      const dataUrl = this.canvas.toDataURL();
-      this.undoStack.push(dataUrl);
-      if (this.undoStack.length > 20) {
-        this.undoStack.shift();
-      }
-      this.redoStack = [];
+        // Временное заливка визуальным фоном
+        this.ctx.fillStyle = this.visualBackgroundColor;
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+        // Нарисовать существующее содержимое (если нужно, в вашей логике это может быть сохранено отдельно)
+        // Здесь важно, что должна быть заливка визуальным фоном перед снятием snapshot
+
+        // Потом сделать toDataURL и сохранить
+        const dataUrl = this.canvas.toDataURL();
+
+        // Откатить визуальную заливку? Если нужно, восстановить оригинальное содержимое
+
+        this.undoStack.push(dataUrl);
+        if (this.undoStack.length > 20) this.undoStack.shift();
+        this.redoStack = [];
     },
     undo() {
       if (this.undoStack.length > 0) {
@@ -80,7 +89,7 @@ export default {
         img.src = previousState;
         img.onload = () => {
           this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-          this.ctx.fillStyle = "white";
+          this.ctx.fillStyle = this.visualBackgroundColor;;
           this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
           this.ctx.drawImage(img, 0, 0);
         };
@@ -94,7 +103,7 @@ export default {
         img.src = nextState;
         img.onload = () => {
           this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-          this.ctx.fillStyle = "white";
+          this.ctx.fillStyle = this.visualBackgroundColor;;
           this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
           this.ctx.drawImage(img, 0, 0);
         };
