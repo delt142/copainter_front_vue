@@ -1,0 +1,126 @@
+html,
+body {
+  overflow: hidden !important;
+}
+#app {
+  background: linear-gradient(to bottom right, #000000, #127728, #03791c, #02d41e);
+  position: relative;
+  min-height: 100vh;
+  max-width: 100%;
+  overflow: hidden;
+}
+.main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin-left: 60px;
+  margin-top: 40px;
+  box-sizing: border-box;
+  padding: 20px;
+}
+.windows-container {
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+  justify-content: center;
+  align-items: center;
+}
+.drawing-window,
+.generation-window {
+  border: 2px solid #000;
+}
+.generation-container {
+  background-color: #928e8e4d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+.generation-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.generate-button-container {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.generate-btn {
+  padding: 12px 20px;
+  font-size: 18px;
+  color: #fff;
+  background-color: #28be46;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+.generate-btn:hover {
+  background-color: #1a8f34;
+  transform: scale(1.05);
+}
+.generate-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Некоторые повторяющиеся стили для toolbar-base button */
+.toolbar-base button {
+  width: 40px;
+  height: 60px;
+  margin-bottom: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.toolbar-base button.selected {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+.pen-size-control input[type="range"] {
+  width: 100%;
+}
+/* Выдвигаемая панель со стилями */
+.styles-panel {
+  position: fixed;
+  top: 0;
+  left: 60px;
+  width: 190px;
+  height: 100vh;
+  background-color: #28be46;
+  border-left: 1px solid #fff;
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 1200;
+}
+.styles-panel h3 {
+  margin-top: 0;
+  color: #fff;
+}
+.styles-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+}
+.styles-panel li {
+  padding: 8px 0;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+.styles-panel li:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}

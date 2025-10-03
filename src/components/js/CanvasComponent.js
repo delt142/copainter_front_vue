@@ -1,9 +1,3 @@
-<template>
-  <!-- Используем привязку width и height для динамического изменения размера -->
-  <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight"></canvas>
-</template>
-
-<script>
 export default {
   name: "CanvasComponent",
   props: {
@@ -20,10 +14,8 @@ export default {
     return {
       canvas: null,
       ctx: null,
-      // Локальные размеры холста
       canvasWidth: this.width,
       canvasHeight: this.height,
-      // Настройки кисти и рисования
       penSize: 2,
       penColor: "black",
       defaultPenColor: "black",
@@ -31,8 +23,9 @@ export default {
       undoStack: [],
       redoStack: [],
       savedImageData: null,
-      currentTool: "pencil", // Возможные значения: pencil, eraser, line
-      startPoint: null
+      currentTool: "pencil",
+      startPoint: null,
+      visualBackgroundColor: " #928e8e10"
     };
   },
   mounted() {
@@ -43,14 +36,33 @@ export default {
   },
   methods: {
     initializeCanvas() {
-      this.ctx.fillStyle = "white";
+      this.ctx.fillStyle = this.visualBackgroundColor;
       this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
     },
     clearCanvas() {
       this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-      this.ctx.fillStyle = "white";
+      this.ctx.fillStyle = this.visualBackgroundColor;
       this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
       this.saveState();
+    },
+    getWhiteBackgroundDataUrl() {
+        // Сохраняем текущее содержимое
+        const currentImageData = this.ctx.getImageData(0, 0, this.canvasWidth, this.canvasHeight);
+
+        // Заливаем белым фоном
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+        // Восстанавливаем содержимое поверх белого фона
+        this.ctx.putImageData(currentImageData, 0, 0);
+
+        // Получаем dataUrl с белым фоном
+        const dataUrl = this.canvas.toDataURL('image/png');
+
+        // Восстанавливаем визуальное содержимое в том же состоянии
+        this.ctx.putImageData(currentImageData, 0, 0);
+
+        return dataUrl;
     },
     saveState() {
       const dataUrl = this.canvas.toDataURL();
@@ -207,21 +219,17 @@ export default {
         this.draw({ x, y });
       }
     },
-    onTouchEnd(event) {
+    onTouchEnd() {
       if (this.drawing) {
         this.drawing = false;
         this.saveState();
       }
     },
-    // Меняем размеры холста
     resizeCanvas(newWidth, newHeight) {
-      // Сохраняем текущее содержимое холста как Data URL
       const tempDataUrl = this.canvas.toDataURL();
-      // Сохраняем текущие размеры для расчёта масштабирования
       const oldWidth = this.canvasWidth;
       const oldHeight = this.canvasHeight;
 
-      // Обновляем внутренние свойства и размеры элемента canvas
       this.canvasWidth = newWidth;
       this.canvasHeight = newHeight;
       this.canvas.width = newWidth;
@@ -230,11 +238,9 @@ export default {
       const image = new Image();
       image.src = tempDataUrl;
       image.onload = () => {
-        // Масштабируем изображение из старых размеров в новые
         this.ctx.drawImage(image, 0, 0, oldWidth, oldHeight, 0, 0, newWidth, newHeight);
       };
     }
-
   },
   watch: {
     width(newWidth) {
@@ -245,15 +251,3 @@ export default {
     }
   }
 };
-</script>
-
-<style scoped>
-canvas {
-  display: block;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-</style>
-
